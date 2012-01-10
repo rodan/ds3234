@@ -1,7 +1,11 @@
 #ifndef __ds3234_h_
 #define __ds3234_h_
 
+#if ARDUINO >= 100
+#include <Arduino.h>
+#else
 #include <WProgram.h>
+#endif
 
 void DS3234_init(uint8_t pin, uint8_t creg);
 void DS3234_set(uint8_t pin, uint8_t s, uint8_t mi, uint8_t h, uint8_t dw,
