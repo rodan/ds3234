@@ -46,7 +46,7 @@ bit1 A2IE   Alarm2 interrupt enable (1 to enable)
 bit0 A1IE   Alarm1 interrupt enable (1 to enable)
 */
 
-void DS3234_init(uint8_t pin, uint8_t ctrl_reg)
+void DS3234_init(const uint8_t pin, const uint8_t ctrl_reg)
 {
     pinMode(pin, OUTPUT);       // chip select pin
     SPI.begin();
@@ -56,20 +56,19 @@ void DS3234_init(uint8_t pin, uint8_t ctrl_reg)
     delay(10);
 }
 
-void DS3234_set(uint8_t pin, uint8_t s, uint8_t mi, uint8_t h, uint8_t dw,
-                uint8_t d, uint8_t mo, uint16_t y)
+void DS3234_set(const uint8_t pin, struct ts t)
 {
-    uint8_t i, century, short_y;
+    uint8_t i, century;
 
-    if (y > 2000) {
+    if (t.year > 2000) {
         century = B10000000;
-        short_y = y - 2000;
+        t.year_s = t.year - 2000;
     } else {
         century = 0;
-        short_y = y - 1900;
+        t.year_s = t.year - 1900;
     }
 
-    uint8_t TimeDate[7] = { s, mi, h, dw, d, mo, short_y };
+    uint8_t TimeDate[7] = { t.sec, t.min, t.hour, t.wday, t.mday, t.mon, t.year_s };
     for (i = 0; i <= 6; i++) {
         digitalWrite(pin, LOW);
         SPI.transfer(i + 0x80);
@@ -81,11 +80,7 @@ void DS3234_set(uint8_t pin, uint8_t s, uint8_t mi, uint8_t h, uint8_t dw,
     }
 }
 
-// type==0 returns hh:mm:ss YYMMDD
-// type==1 returns YYYYMMDD
-// type==2 returns D
-// type==3 returns YYYYMMDD hh:mm:ss
-void DS3234_get(uint8_t pin, unsigned char type, char *buf, size_t len)
+void DS3234_get(const uint8_t pin, struct ts *t)
 {
     uint8_t TimeDate[7];        //second,minute,hour,dow,day,month,year
     uint8_t century = 0;
@@ -110,23 +105,19 @@ void DS3234_get(uint8_t pin, unsigned char type, char *buf, size_t len)
     else
         year_full = 1900 + TimeDate[6];
 
-    if (type == 0) {
-        snprintf(buf, len, "%02d:%02d:%02d %d%02d%02d", TimeDate[2],
-                 TimeDate[1], TimeDate[0], year_full, TimeDate[5], TimeDate[4]);
-    } else if (type == 1) {
-        snprintf(buf, len, "%d%02d%02d", year_full, TimeDate[5], TimeDate[4]);
-    } else if (type == 2) {
-        snprintf(buf, len, "%d", TimeDate[4]);
-    } else if (type == 3) {
-        snprintf(buf, len, "%d%02d%02d %02d:%02d:%02d", year_full,
-                 TimeDate[5], TimeDate[4], TimeDate[2], TimeDate[1],
-                 TimeDate[0]);
-    }
+    t->sec = TimeDate[0];
+    t->min = TimeDate[1];
+    t->hour = TimeDate[2];
+    t->mday = TimeDate[4];
+    t->mon = TimeDate[5];
+    t->year = year_full;
+    t->wday = TimeDate[3];
+    t->year_s = TimeDate[6];
 }
 
 // control register
 
-void DS3234_set_creg(uint8_t pin, uint8_t val)
+void DS3234_set_creg(const uint8_t pin, const uint8_t val)
 {
     digitalWrite(pin, LOW);
     SPI.transfer(0x8E);         // control register address
@@ -147,7 +138,7 @@ bit1 A2F      Alarm 2 Flag - (1 if alarm2 was triggered)
 bit0 A1F      Alarm 1 Flag - (1 if alarm1 was triggered)
 */
 
-void DS3234_set_sreg(uint8_t pin, uint8_t sreg)
+void DS3234_set_sreg(const uint8_t pin, const uint8_t sreg)
 {
     digitalWrite(pin, LOW);
     SPI.transfer(0x8F);         // status register write address
@@ -155,7 +146,7 @@ void DS3234_set_sreg(uint8_t pin, uint8_t sreg)
     digitalWrite(pin, HIGH);
 }
 
-uint8_t DS3234_get_sreg(uint8_t pin)
+uint8_t DS3234_get_sreg(const uint8_t pin)
 {
     uint8_t rv;
 
@@ -169,7 +160,7 @@ uint8_t DS3234_get_sreg(uint8_t pin)
 
 // aging register
 
-void DS3234_set_aging(uint8_t pin, int8_t value)
+void DS3234_set_aging(const uint8_t pin, const int8_t value)
 {
     uint8_t reg;
 
@@ -184,7 +175,7 @@ void DS3234_set_aging(uint8_t pin, int8_t value)
     digitalWrite(pin, HIGH);
 }
 
-int8_t DS3234_get_aging(uint8_t pin)
+int8_t DS3234_get_aging(const uint8_t pin)
 {
     uint8_t reg;
     int8_t rv;
@@ -204,7 +195,7 @@ int8_t DS3234_get_aging(uint8_t pin)
 
 // temperature register
 
-float DS3234_get_treg(uint8_t pin)
+float DS3234_get_treg(const uint8_t pin)
 {
     float rv;
     uint8_t temp_msb, temp_lsb;
@@ -233,8 +224,8 @@ float DS3234_get_treg(uint8_t pin)
 
 // flags are: A1M1 (seconds), A1M2 (minutes), A1M3 (hour), 
 // A1M4 (day) 0 to enable, 1 to disable, DY/DT (dayofweek == 1/dayofmonth == 0)
-void DS3234_set_a1(uint8_t pin, uint8_t s, uint8_t mi, uint8_t h, uint8_t d,
-                   boolean * flags)
+void DS3234_set_a1(const uint8_t pin, const uint8_t s, const uint8_t mi, const uint8_t h,
+        const uint8_t d, const boolean * flags)
 {
     uint8_t t[4] = { s, mi, h, d };
     uint8_t i;
@@ -250,7 +241,7 @@ void DS3234_set_a1(uint8_t pin, uint8_t s, uint8_t mi, uint8_t h, uint8_t d,
     }
 }
 
-void DS3234_get_a1(uint8_t pin, char *buf, size_t len)
+void DS3234_get_a1(const uint8_t pin, char *buf, const size_t len)
 {
     uint8_t n[4];
     uint8_t t[4];               //second,minute,hour,day
@@ -277,8 +268,8 @@ void DS3234_get_a1(uint8_t pin, char *buf, size_t len)
 }
 
 // flags are: A2M2 (minutes), A2M3 (hour), A2M4 (day) 0 to enable, 1 to disable, DY/DT (dayofweek == 1/dayofmonth == 0) - 
-void DS3234_set_a2(uint8_t pin, uint8_t mi, uint8_t h, uint8_t d,
-                   boolean * flags)
+void DS3234_set_a2(const uint8_t pin, const uint8_t mi, const uint8_t h, const uint8_t d,
+                   const boolean * flags)
 {
     uint8_t t[3] = { mi, h, d };
     uint8_t i;
@@ -294,7 +285,7 @@ void DS3234_set_a2(uint8_t pin, uint8_t mi, uint8_t h, uint8_t d,
     }
 }
 
-void DS3234_get_a2(uint8_t pin, char *buf, size_t len)
+void DS3234_get_a2(const uint8_t pin, char *buf, const size_t len)
 {
     uint8_t n[3];
     uint8_t t[3];               //second,minute,hour,day
@@ -320,7 +311,7 @@ void DS3234_get_a2(uint8_t pin, char *buf, size_t len)
 
 // sram
 
-void DS3234_set_sram_8b(uint8_t pin, uint8_t address, uint8_t value)
+void DS3234_set_sram_8b(const uint8_t pin, const uint8_t address, const uint8_t value)
 {
     digitalWrite(pin, LOW);
     SPI.transfer(0x98);
@@ -332,7 +323,7 @@ void DS3234_set_sram_8b(uint8_t pin, uint8_t address, uint8_t value)
     digitalWrite(pin, HIGH);
 }
 
-uint8_t DS3234_get_sram_8b(uint8_t pin, uint8_t address)
+uint8_t DS3234_get_sram_8b(const uint8_t pin, const uint8_t address)
 {
     uint8_t rv;
 
@@ -350,12 +341,19 @@ uint8_t DS3234_get_sram_8b(uint8_t pin, uint8_t address)
 
 // helpers
 
-uint8_t dectobcd(uint8_t val)
+uint8_t dectobcd(const uint8_t val)
 {
     return ((val / 10 * 16) + (val % 10));
 }
 
-uint8_t bcdtodec(uint8_t val)
+uint8_t bcdtodec(const uint8_t val)
 {
     return ((val / 16 * 10) + (val % 16));
+}
+
+uint8_t inp2toi(const char *cmd, const uint16_t seek)
+{
+    uint8_t rv;
+    rv = (cmd[seek] - 48) * 10 + cmd[seek + 1] - 48;
+    return rv;
 }
