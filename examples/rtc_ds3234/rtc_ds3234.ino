@@ -15,7 +15,7 @@ unsigned long prev, interval = 5000;
 void setup()
 {
     Serial.begin(9600);
-    DS3234_init(cs, 0x06);
+    DS3234_init(cs, DS3234_INTCN);
     memset(recv, 0, BUFF_MAX - 1);
     Serial.println("GET time");
 }
@@ -104,7 +104,7 @@ void parse_cmd(char *cmd, int cmdsize)
             Serial.print(" ");
         }
     } else if (cmd[0] == 65 && cmdsize == 9) {  // "A" set alarm 1
-        DS3234_set_creg(cs, 0x05);
+        DS3234_set_creg(cs, DS3234_INTCN | DS3234_A1IE);
         //ASSMMHHDD
         for (i = 0; i < 4; i++) {
             time[i] = (cmd[2 * i + 1] - 48) * 10 + cmd[2 * i + 2] - 48; // ss, mm, hh, dd
@@ -114,7 +114,7 @@ void parse_cmd(char *cmd, int cmdsize)
         DS3234_get_a1(cs, &buff[0], 59);
         Serial.println(buff);
     } else if (cmd[0] == 66 && cmdsize == 7) {  // "B" Set Alarm 2
-        DS3234_set_creg(cs, 0x06);
+        DS3234_set_creg(cs, DS3234_INTCN | DS3234_A2IE);
         //BMMHHDD
         for (i = 0; i < 4; i++) {
             time[i] = (cmd[2 * i + 1] - 48) * 10 + cmd[2 * i + 2] - 48; // mm, hh, dd
