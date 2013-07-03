@@ -7,6 +7,16 @@
 #include <WProgram.h>
 #endif
 
+// control register bits
+#define DS3234_A1IE     0x1
+#define DS3234_A2IE     0x2
+#define DS3234_INTCN    0x4
+
+// status register bits
+#define DS3234_A1F      0x1
+#define DS3234_A2F      0x2
+#define DS3234_OSF      0x80
+
 struct ts {
     uint8_t sec;         /* seconds */
     uint8_t min;         /* minutes */
@@ -40,9 +50,14 @@ float DS3234_get_treg(const uint8_t pin);
 void DS3234_set_a1(const uint8_t pin, const uint8_t s, const uint8_t mi, const uint8_t h, const uint8_t d,
                    const boolean * flags);
 void DS3234_get_a1(const uint8_t pin, char *buf, const size_t len);
+void DS3234_clear_a1f(const uint8_t pin);
+uint8_t DS3234_triggered_a1(const uint8_t pin);
+
 void DS3234_set_a2(const uint8_t pin, const uint8_t mi, const uint8_t h, const uint8_t d,
                    const boolean * flags);
 void DS3234_get_a2(const uint8_t pin, char *buf, const size_t len);
+void DS3234_clear_a2f(const uint8_t pin);
+uint8_t DS3234_triggered_a2(const uint8_t pin);
 
 // sram
 void DS3234_set_sram_8b(const uint8_t pin, const uint8_t address, const uint8_t value);

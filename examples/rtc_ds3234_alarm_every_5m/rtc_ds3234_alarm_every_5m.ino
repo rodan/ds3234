@@ -13,16 +13,8 @@
 const int cs = 10;              // chip select pin
 uint8_t sleep_period = 5;       // the sleep interval in minutes between 2 consecutive alarms
 
-unsigned long prev, interval = 10000;
-
-// when the alarm flag is cleared the pulldown on INT is also released
-void reset_a2_alarm_flag(void)
-{
-    uint8_t reg_val;
-
-    reg_val = DS3234_get_sreg(cs) & B11111101;
-    DS3234_set_sreg(cs, reg_val);
-}
+// how often to refresh the info on stdout (ms)
+unsigned long prev = 5000, interval = 5000;
 
 void set_next_alarm(void)
 {
@@ -49,14 +41,14 @@ void set_next_alarm(void)
     DS3234_set_a2(cs, wakeup_min, 0, 0, flags);
 
     // activate Alarm2
-    DS3234_set_creg(cs, 0x06);
+    DS3234_set_creg(cs, DS3234_INTCN | DS3234_A2IE);
 }
 
 void setup()
 {
     Serial.begin(9600);
-    DS3234_init(cs, 0x06);
-    reset_a2_alarm_flag();
+    DS3234_init(cs, DS3234_INTCN);
+    DS3234_clear_a2f(cs);
     set_next_alarm();
 }
 
@@ -64,7 +56,6 @@ void loop()
 {
     char buff[BUFF_MAX];
     unsigned long now = millis();
-    int in;
     struct ts t;
 
     // once a while show what is going on
@@ -80,10 +71,11 @@ void loop()
         DS3234_get_a2(cs, &buff[0], 59);
         Serial.println(buff);
 
-        if (DS3234_get_sreg(cs) & B00000010) {
+        if (DS3234_triggered_a2(cs)) {
             Serial.println(" -> alarm2 has been triggered");
             set_next_alarm();
-            reset_a2_alarm_flag();
+            // clear a2 alarm flag and let INT go into hi-z
+            DS3234_clear_a2f(cs);          
         }
         prev = now;
     }

@@ -267,6 +267,20 @@ void DS3234_get_a1(const uint8_t pin, char *buf, const size_t len)
 
 }
 
+// when the alarm flag is cleared the pulldown on INT is also released
+void DS3234_clear_a1f(const uint8_t pin)
+{
+    uint8_t reg_val;
+
+    reg_val = DS3234_get_sreg(pin) & ~DS3234_A1F;
+    DS3234_set_sreg(pin, reg_val);
+}
+
+uint8_t DS3234_triggered_a1(const uint8_t pin)
+{
+    return  DS3234_get_sreg(pin) & DS3234_A1F;
+}
+
 // flags are: A2M2 (minutes), A2M3 (hour), A2M4 (day) 0 to enable, 1 to disable, DY/DT (dayofweek == 1/dayofmonth == 0) - 
 void DS3234_set_a2(const uint8_t pin, const uint8_t mi, const uint8_t h, const uint8_t d,
                    const boolean * flags)
@@ -307,6 +321,20 @@ void DS3234_get_a2(const uint8_t pin, char *buf, const size_t len)
     snprintf(buf, len, "m%02d h%02d d%02d fm%d h%d d%d wm%d %d %d %d", t[0],
              t[1], t[2], f[0], f[1], f[2], f[3], n[0], n[1], n[2]);
 
+}
+
+// when the alarm flag is cleared the pulldown on INT is also released
+void DS3234_clear_a2f(const uint8_t pin)
+{
+    uint8_t reg_val;
+
+    reg_val = DS3234_get_sreg(pin) & ~DS3234_A2F;
+    DS3234_set_sreg(pin, reg_val);
+}
+
+uint8_t DS3234_triggered_a2(const uint8_t pin)
+{
+    return  DS3234_get_sreg(pin) & DS3234_A2F;
 }
 
 // sram

@@ -13,20 +13,12 @@
 const int cs = 10;              // chip select pin
 
 // time when to wake up
-uint8_t wake_HOUR = 7;
-uint8_t wake_MINUTE = 24;
+uint8_t wake_HOUR = 15;
+uint8_t wake_MINUTE = 46;
 uint8_t wake_SECOND = 9;
 
-unsigned long prev, interval = 10000;
-
-// when the alarm flag is cleared the pulldown on INT is also released
-void reset_a1_alarm_flag(void)
-{
-    uint8_t reg_val;
-
-    reg_val = DS3234_get_sreg(cs) & B11111110;
-    DS3234_set_sreg(cs, reg_val);
-}
+// how often to refresh the info on stdout (ms)
+unsigned long prev = 5000, interval = 5000;
 
 void set_alarm(void)
 {
@@ -43,15 +35,15 @@ void set_alarm(void)
     // set Alarm1
     DS3234_set_a1(cs, wake_SECOND, wake_MINUTE, wake_HOUR, 0, flags);
 
-    // activate Alarm1 (enable INTCN and A1IE)
-    DS3234_set_creg(cs, 0x05);
+    // activate Alarm1
+    DS3234_set_creg(cs, DS3234_INTCN | DS3234_A1IE);
 }
 
 void setup()
 {
     Serial.begin(9600);
-    DS3234_init(cs, 0x04);
-    reset_a1_alarm_flag();
+    DS3234_init(cs, DS3234_INTCN);
+    DS3234_clear_a1f(cs);
     set_alarm();
 }
 
@@ -59,7 +51,6 @@ void loop()
 {
     char buff[BUFF_MAX];
     unsigned long now = millis();
-    int in;
     struct ts t;
 
     // once a while show what is going on
@@ -75,9 +66,11 @@ void loop()
         DS3234_get_a1(cs, &buff[0], 59);
         Serial.println(buff);
 
-        if (DS3234_get_sreg(cs) & B00000001) {
+        if (DS3234_triggered_a1(cs)) {
+            // INT has been pulled low
             Serial.println(" -> alarm1 has been triggered");
-            reset_a1_alarm_flag();
+            // clear a1 alarm flag and let INT go into hi-z
+            DS3234_clear_a1f(cs);
         }
         prev = now;
     }
