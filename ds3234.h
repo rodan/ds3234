@@ -34,6 +34,9 @@ void DS3234_init(const uint8_t pin, const uint8_t creg);
 void DS3234_set(const uint8_t pin, struct ts t);
 void DS3234_get(const uint8_t pin, struct ts *t);
 
+void DS3234_set_addr(const uint8_t pin, const uint8_t addr, const uint8_t val);
+uint8_t DS3234_get_addr(const uint8_t pin, const uint8_t addr);
+
 // control/status register
 void DS3234_set_creg(const uint8_t pin, const uint8_t val);
 void DS3234_set_sreg(const uint8_t pin, const uint8_t mask);

@@ -33,6 +33,7 @@
 */
 
 #include <SPI.h>
+#include <stdio.h>
 #include "ds3234.h"
 
 /* control register 0Eh/8Eh
@@ -115,14 +116,29 @@ void DS3234_get(const uint8_t pin, struct ts *t)
     t->year_s = TimeDate[6];
 }
 
-// control register
-
-void DS3234_set_creg(const uint8_t pin, const uint8_t val)
+void DS3234_set_addr(const uint8_t pin, const uint8_t addr, const uint8_t val)
 {
     digitalWrite(pin, LOW);
-    SPI.transfer(0x8E);         // control register address
+    SPI.transfer(addr);
     SPI.transfer(val);
     digitalWrite(pin, HIGH);
+}
+
+uint8_t DS3234_get_addr(const uint8_t pin, const uint8_t addr)
+{
+    uint8_t rv;
+
+    digitalWrite(pin, LOW);
+    SPI.transfer(addr);
+    rv = SPI.transfer(0x00);
+    digitalWrite(pin, HIGH);
+    return rv;
+}
+
+// control register
+void DS3234_set_creg(const uint8_t pin, const uint8_t val)
+{
+    DS3234_set_addr(pin, 0x8E, val);
 }
 
 // status register 0Fh/8Fh
@@ -140,21 +156,13 @@ bit0 A1F      Alarm 1 Flag - (1 if alarm1 was triggered)
 
 void DS3234_set_sreg(const uint8_t pin, const uint8_t sreg)
 {
-    digitalWrite(pin, LOW);
-    SPI.transfer(0x8F);         // status register write address
-    SPI.transfer(sreg);
-    digitalWrite(pin, HIGH);
+    DS3234_set_addr(pin, 0x8F, sreg);
 }
 
 uint8_t DS3234_get_sreg(const uint8_t pin)
 {
     uint8_t rv;
-
-    digitalWrite(pin, LOW);
-    SPI.transfer(0x0F);         // status register read address
-    rv = SPI.transfer(0x00);
-    digitalWrite(pin, HIGH);
-
+    rv = DS3234_get_addr(pin, 0x0f);
     return rv;
 }
 
@@ -169,10 +177,7 @@ void DS3234_set_aging(const uint8_t pin, const int8_t value)
     else
         reg = ~(-value) + 1;    // 2C
 
-    digitalWrite(pin, LOW);
-    SPI.transfer(0x90);         // aging offset write register
-    SPI.transfer(reg);
-    digitalWrite(pin, HIGH);
+    DS3234_set_addr(pin, 0x90, reg);
 }
 
 int8_t DS3234_get_aging(const uint8_t pin)
@@ -180,11 +185,7 @@ int8_t DS3234_get_aging(const uint8_t pin)
     uint8_t reg;
     int8_t rv;
 
-    digitalWrite(pin, LOW);
-    SPI.transfer(0x10);         // aging offset register
-    reg = SPI.transfer(0x00);
-    digitalWrite(pin, HIGH);
-
+    reg = DS3234_get_addr(pin, 0x10);
     if ((reg & 0x80) != 0)
         rv = reg | ~((1 << 8) - 1);     // if negative get two's complement
     else
@@ -201,15 +202,8 @@ float DS3234_get_treg(const uint8_t pin)
     uint8_t temp_msb, temp_lsb;
     int8_t nint;
 
-    digitalWrite(pin, LOW);
-    SPI.transfer(0x11);         // temperature register MSB address
-    temp_msb = SPI.transfer(0x00);
-    digitalWrite(pin, HIGH);
-    digitalWrite(pin, LOW);
-    SPI.transfer(0x12);         // temperature register MSB address
-    temp_lsb = SPI.transfer(0x00) >> 6;
-    digitalWrite(pin, HIGH);
-
+    temp_msb = DS3234_get_addr(pin, 0x11);
+    temp_lsb = DS3234_get_addr(pin, 0x12) >> 6;
     if ((temp_msb & 0x80) != 0)
         nint = temp_msb | ~((1 << 8) - 1);      // if negative get two's complement
     else
@@ -341,29 +335,16 @@ uint8_t DS3234_triggered_a2(const uint8_t pin)
 
 void DS3234_set_sram_8b(const uint8_t pin, const uint8_t address, const uint8_t value)
 {
-    digitalWrite(pin, LOW);
-    SPI.transfer(0x98);
-    SPI.transfer(address);
-    digitalWrite(pin, HIGH);
-    digitalWrite(pin, LOW);
-    SPI.transfer(0x99);
-    SPI.transfer(value);
-    digitalWrite(pin, HIGH);
+    DS3234_set_addr(pin, 0x98, address);
+    DS3234_set_addr(pin, 0x99, value);
 }
 
 uint8_t DS3234_get_sram_8b(const uint8_t pin, const uint8_t address)
 {
     uint8_t rv;
 
-    digitalWrite(pin, LOW);
-    SPI.transfer(0x98);
-    SPI.transfer(address);
-    digitalWrite(pin, HIGH);
-    digitalWrite(pin, LOW);
-    SPI.transfer(0x19);
-    rv = SPI.transfer(0x00);
-    digitalWrite(pin, HIGH);
-
+    DS3234_set_addr(pin, 0x98, address);
+    rv = DS3234_get_addr(pin, 0x19);
     return rv;
 }
 
