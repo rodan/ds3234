@@ -61,7 +61,7 @@ void DS3234_set(const uint8_t pin, struct ts t)
     uint8_t i, century;
 
     if (t.year > 2000) {
-        century = B10000000;
+        century = 0x80;
         t.year_s = t.year - 2000;
     } else {
         century = 0;
@@ -94,7 +94,7 @@ void DS3234_get(const uint8_t pin, struct ts *t)
         digitalWrite(pin, HIGH);
         if (i == 5) {           // month address also contains the century on bit7
             TimeDate[5] = bcdtodec(n & 0x1F);
-            century = (n & B10000000) >> 7;
+            century = (n & 0x80) >> 7;
         } else {
             TimeDate[i] = bcdtodec(n);
         }
@@ -185,7 +185,7 @@ int8_t DS3234_get_aging(const uint8_t pin)
     reg = SPI.transfer(0x00);
     digitalWrite(pin, HIGH);
 
-    if ((reg & B10000000) != 0)
+    if ((reg & 0x80) != 0)
         rv = reg | ~((1 << 8) - 1);     // if negative get two's complement
     else
         rv = reg;
@@ -210,7 +210,7 @@ float DS3234_get_treg(const uint8_t pin)
     temp_lsb = SPI.transfer(0x00) >> 6;
     digitalWrite(pin, HIGH);
 
-    if ((temp_msb & B10000000) != 0)
+    if ((temp_msb & 0x80) != 0)
         nint = temp_msb | ~((1 << 8) - 1);      // if negative get two's complement
     else
         nint = temp_msb;
@@ -225,7 +225,7 @@ float DS3234_get_treg(const uint8_t pin)
 // flags are: A1M1 (seconds), A1M2 (minutes), A1M3 (hour), 
 // A1M4 (day) 0 to enable, 1 to disable, DY/DT (dayofweek == 1/dayofmonth == 0)
 void DS3234_set_a1(const uint8_t pin, const uint8_t s, const uint8_t mi, const uint8_t h,
-        const uint8_t d, const boolean * flags)
+        const uint8_t d, const uint8_t * flags)
 {
     uint8_t t[4] = { s, mi, h, d };
     uint8_t i;
@@ -241,11 +241,11 @@ void DS3234_set_a1(const uint8_t pin, const uint8_t s, const uint8_t mi, const u
     }
 }
 
-void DS3234_get_a1(const uint8_t pin, char *buf, const size_t len)
+void DS3234_get_a1(const uint8_t pin, char *buf, const uint8_t len)
 {
     uint8_t n[4];
     uint8_t t[4];               //second,minute,hour,day
-    boolean f[5];               // flags
+    uint8_t f[5];               // flags
     uint8_t i;
 
     for (i = 0; i <= 3; i++) {
@@ -253,11 +253,11 @@ void DS3234_get_a1(const uint8_t pin, char *buf, const size_t len)
         SPI.transfer(i + 0x07);
         n[i] = SPI.transfer(0x00);
         digitalWrite(pin, HIGH);
-        f[i] = (n[i] & B10000000) >> 7;
+        f[i] = (n[i] & 0x80) >> 7;
         t[i] = bcdtodec(n[i] & 0x7F);
     }
 
-    f[4] = (n[3] & B01000000) >> 6;
+    f[4] = (n[3] & 0x40) >> 6;
     t[3] = bcdtodec(n[3] & 0x3F);
 
     snprintf(buf, len,
@@ -283,7 +283,7 @@ uint8_t DS3234_triggered_a1(const uint8_t pin)
 
 // flags are: A2M2 (minutes), A2M3 (hour), A2M4 (day) 0 to enable, 1 to disable, DY/DT (dayofweek == 1/dayofmonth == 0) - 
 void DS3234_set_a2(const uint8_t pin, const uint8_t mi, const uint8_t h, const uint8_t d,
-                   const boolean * flags)
+                   const uint8_t * flags)
 {
     uint8_t t[3] = { mi, h, d };
     uint8_t i;
@@ -299,11 +299,11 @@ void DS3234_set_a2(const uint8_t pin, const uint8_t mi, const uint8_t h, const u
     }
 }
 
-void DS3234_get_a2(const uint8_t pin, char *buf, const size_t len)
+void DS3234_get_a2(const uint8_t pin, char *buf, const uint8_t len)
 {
     uint8_t n[3];
     uint8_t t[3];               //second,minute,hour,day
-    boolean f[4];               // flags
+    uint8_t f[4];               // flags
     uint8_t i;
 
     for (i = 0; i <= 2; i++) {
@@ -311,11 +311,11 @@ void DS3234_get_a2(const uint8_t pin, char *buf, const size_t len)
         SPI.transfer(i + 0x0B);
         n[i] = SPI.transfer(0x00);
         digitalWrite(pin, HIGH);
-        f[i] = (n[i] & B10000000) >> 7;
+        f[i] = (n[i] & 0x80) >> 7;
         t[i] = bcdtodec(n[i] & 0x7F);
     }
 
-    f[3] = (n[2] & B01000000) >> 6;
+    f[3] = (n[2] & 0x40) >> 6;
     t[2] = bcdtodec(n[2] & 0x3F);
 
     snprintf(buf, len, "m%02d h%02d d%02d fm%d h%d d%d wm%d %d %d %d", t[0],

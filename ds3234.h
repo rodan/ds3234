@@ -48,14 +48,14 @@ float DS3234_get_treg(const uint8_t pin);
 
 // alarms
 void DS3234_set_a1(const uint8_t pin, const uint8_t s, const uint8_t mi, const uint8_t h, const uint8_t d,
-                   const boolean * flags);
-void DS3234_get_a1(const uint8_t pin, char *buf, const size_t len);
+                   const uint8_t * flags);
+void DS3234_get_a1(const uint8_t pin, char *buf, const uint8_t len);
 void DS3234_clear_a1f(const uint8_t pin);
 uint8_t DS3234_triggered_a1(const uint8_t pin);
 
 void DS3234_set_a2(const uint8_t pin, const uint8_t mi, const uint8_t h, const uint8_t d,
-                   const boolean * flags);
-void DS3234_get_a2(const uint8_t pin, char *buf, const size_t len);
+                   const uint8_t * flags);
+void DS3234_get_a2(const uint8_t pin, char *buf, const uint8_t len);
 void DS3234_clear_a2f(const uint8_t pin);
 uint8_t DS3234_triggered_a2(const uint8_t pin);
 
