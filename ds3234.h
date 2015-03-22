@@ -7,6 +7,10 @@
 #include <WProgram.h>
 #endif
 
+#include "config.h"
+
+#define SECONDS_FROM_1970_TO_2000 946684800
+
 // control register bits
 #define DS3234_A1IE     0x1
 #define DS3234_A2IE     0x2
@@ -28,6 +32,9 @@ struct ts {
     uint8_t yday;        /* day in the year */
     uint8_t isdst;       /* daylight saving time */
     uint8_t year_s;      /* year in short notation*/
+#ifdef CONFIG_UNIXTIME
+    uint32_t unixtime;   /* seconds since 01.01.1970 00:00:00 UTC*/
+#endif    
 };
 
 void DS3234_init(const uint8_t pin, const uint8_t creg);
@@ -67,6 +74,7 @@ void DS3234_set_sram_8b(const uint8_t pin, const uint8_t address, const uint8_t 
 uint8_t DS3234_get_sram_8b(const uint8_t pin, const uint8_t address);
 
 // helpers
+uint32_t get_unixtime(struct ts t);
 uint8_t dectobcd(const uint8_t val);
 uint8_t bcdtodec(const uint8_t val);
 uint8_t inp2toi(const char *cmd, const uint16_t seek);
