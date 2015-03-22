@@ -109,7 +109,7 @@ void parse_cmd(char *cmd, int cmdsize)
         for (i = 0; i < 4; i++) {
             time[i] = (cmd[2 * i + 1] - 48) * 10 + cmd[2 * i + 2] - 48; // ss, mm, hh, dd
         }
-        boolean flags[5] = { 0, 0, 0, 0, 0 };
+        uint8_t flags[5] = { 0, 0, 0, 0, 0 };
         DS3234_set_a1(cs, time[0], time[1], time[2], time[3], flags);
         DS3234_get_a1(cs, &buff[0], 59);
         Serial.println(buff);
@@ -119,7 +119,7 @@ void parse_cmd(char *cmd, int cmdsize)
         for (i = 0; i < 4; i++) {
             time[i] = (cmd[2 * i + 1] - 48) * 10 + cmd[2 * i + 2] - 48; // mm, hh, dd
         }
-        boolean flags[5] = { 0, 0, 0, 0 };
+        uint8_t flags[5] = { 0, 0, 0, 0 };
         DS3234_set_a2(cs, time[0], time[1], time[2], flags);
         DS3234_get_a2(cs, &buff[0], 59);
         Serial.println(buff);
