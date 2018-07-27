@@ -1,0 +1,26 @@
+{
+  "name": "ds3234",
+  "keywords": "i2c, rtc, ds3234, time",
+  "description": "Arduino Library for DS3234 RTC",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/rodan/ds3234.git"
+  },
+  "authors":
+  [
+    {
+      "name": "Petre Rodan",
+      "email": "petre.rodan@gmail.com",
+      "url": "https://github.com/rodan/ds3234",
+      "maintainer": true
+    }
+  ],
+  "dependencies":
+  {
+
+  },
+  "version": "1.0",
+  "frameworks": "arduino",
+  "plarforms": "*"
+}
